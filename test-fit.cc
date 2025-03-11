@@ -16,6 +16,22 @@ auto bbox(const PointVector &pv) {
 }
 
 int main(int argc, char **argv) {
+  if (false) {
+    QuadricFit qf;
+    for (size_t i = 0; i < 10; ++i)
+      qf.coeffs[i] = 0;
+    qf.coeffs[0] = -1;
+    qf.coeffs[4] = 1;
+    qf.coeffs[7] = 1;
+    qf.coeffs[9] = 1;
+    Point3D p(0.95,0,0);
+    auto d0 = std::abs(qf.eval(p));
+    auto d1 = std::abs(qf.eval(p)) / qf.grad(p).norm();
+    auto d2 = qf.distance(p);
+    std::cout << d0 << " / " << d1 << " / " << d2 << std::endl;
+    return 0;
+  }
+
   if (argc != 2) {
     std::cerr << "Usage: " << argv[0] << " <input.obj>" << std::endl;
     return 1;
