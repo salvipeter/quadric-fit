@@ -1,8 +1,8 @@
 #include <Eigen/Dense>
 
-using namespace Eigen;
-
 #include "quadric-fit.hh"
+
+using namespace Eigen;
 
 Quadric::Type Quadric::classify(double tolerance) const {
   auto [Q, P, R] = matrixForm();
