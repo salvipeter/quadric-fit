@@ -65,7 +65,3 @@ double Quadric::distance(const Point3D &p) const {
   //   throw std::runtime_error("multiple non-negative solutions to quadratic equation");
   // return std::max(x1, x2);
 }
-
-Quadric::Type Quadric::classify() const {
-  return TWO_PLANES;            // TODO
-}

@@ -2,13 +2,18 @@
 
 #include <geometry.hh>          // https://github.com/salvipeter/libgeom/
 
-// Based on:
+// Fitting & distance computation is based on:
 //   D. Yan, Y. Liu, W. Wang:
 //     Quadric surface extraction by variational shape approximation.
 //       Proceedings of GMP'06, LNCS 4077, pp. 73-86, 2006.
 //   (Sections 2.2-3, and references within, notably [18] and [20], also
 //    G. Taubin: Distance approximations for rasterizing implicit curves,
 //      ACM TOG 13(1), pp. 3-42, 1994.)
+//
+// Classification is based on:
+//   D. Eberly (Geometric Tools): Classifying quadrics using exact arithmetic.
+//     https://www.geometrictools.com/Documentation/ClassifyingQuadrics.pdf
+
 
 struct Quadric {
   // Coefficients corresponding to: 1   x   y   z  x^2  xy  xz y^2  yz  z^2
@@ -27,12 +32,12 @@ struct Quadric {
   // Fitter (eigenvalues <= tolerance are treated as zero)
   void fit(const Geometry::TriMesh &mesh, double tolerance = 1e-8);
 
-  // Classification
+  // Classification (eigenvalues <= tolerance are treated as zero)
   enum Type {
+    NO_SURFACE = 0, PLANE, TWO_PLANES,
     ELLIPSOID, ELLIPTIC_PARABOLOID, HYPERBOLIC_PARABOLOID,
     HYPERBOLOID_1SHEET, HYPERBOLOID_2SHEETS,
     ELLIPTIC_CONE, ELLIPTIC_CYLINDER, HYPERBOLIC_CYLINDER, PARABOLIC_CYLINDER,
-    TWO_PLANES, NO_SURFACE
   };
-  Type classify() const;
+  Type classify(double tolerance = 1e-8) const;
 };
