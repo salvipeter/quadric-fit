@@ -11,6 +11,11 @@
 
 // ... but a simple 4-point average (3 vertices and mass center) is good enough.
 
+// Also note that the integral computing functions need to be multiplied by the triangle area,
+// which has been moved out for efficiency reasons.
+
+// #define USE_EXACT_TRIANGLE_INTEGRAL
+
 #include <cmath>
 #include <stdexcept>
 
@@ -238,27 +243,31 @@ template <int M, int N, int P>
 struct TriangleIntegral {
   template <typename CoordType>
   static double compute(const CoordType& q) {
-    double area = triangleArea(q);
     double integral = ILoop<0, M, N, P>::compute(q);
-    return 2.0 * area * integral;
+    return 2.0 * integral;
   }
 };
 
+#ifdef USE_EXACT_TRIANGLE_INTEGRAL
+
 // Helper function to make the interface cleaner
-// template <int M, int N, int P, typename CoordType>
-// double computeTriangleIntegral(const CoordType& q) {
-//   return TriangleIntegral<M, N, P>::compute(q);
-// }
+template <int M, int N, int P, typename CoordType>
+double computeTriangleIntegral(const CoordType& q) {
+  return TriangleIntegral<M, N, P>::compute(q);
+}
 
-// Simple alternative
+#else  // !USE_EXACT_TRIANGLE_INTEGRAL
 
+// Simple alternative: average of 4 samples.
 template <int M, int N, int P>
 double computeTriangleIntegral(const std::array<Point3D, 3> &q) {
   auto f = [](const Point3D &p) {
     return std::pow(p[0], M) * std::pow(p[1], N) * std::pow(p[2], P);
   };
-  return triangleArea(q) * (f(q[0]) + f(q[1]) + f(q[2]) + f((q[0] + q[1] + q[2]) / 3)) / 4;
+  return (f(q[0]) + f(q[1]) + f(q[2]) + f((q[0] + q[1] + q[2]) / 3)) / 4;
 }
+
+#endif  // USE_EXACT_TRIANGLE_INTEGRAL
 
 }
 
@@ -270,94 +279,95 @@ void Quadric::fit(const TriMesh &mesh, double tolerance) {
   for (const auto &tri : mesh.triangles()) {
     for (size_t i = 0; i < 3; ++i)
       triangle[i] = mesh[tri[i]];
-    A += triangleArea(triangle);
+    auto area = triangleArea(triangle);
+    A += area;
     
-    M(0, 0) += computeTriangleIntegral<0,0,0>(triangle);
-    M(1, 0) += computeTriangleIntegral<1,0,0>(triangle);
-    M(1, 1) += computeTriangleIntegral<2,0,0>(triangle);
-    M(2, 0) += computeTriangleIntegral<0,1,0>(triangle);
-    M(2, 1) += computeTriangleIntegral<1,1,0>(triangle);
-    M(2, 2) += computeTriangleIntegral<0,2,0>(triangle);
-    M(3, 0) += computeTriangleIntegral<0,0,1>(triangle);
-    M(3, 1) += computeTriangleIntegral<1,0,1>(triangle);
-    M(3, 2) += computeTriangleIntegral<0,1,1>(triangle);
-    M(3, 3) += computeTriangleIntegral<0,0,2>(triangle);
-    M(4, 0) += computeTriangleIntegral<2,0,0>(triangle);
-    M(4, 1) += computeTriangleIntegral<3,0,0>(triangle);
-    M(4, 2) += computeTriangleIntegral<2,1,0>(triangle);
-    M(4, 3) += computeTriangleIntegral<2,0,1>(triangle);
-    M(4, 4) += computeTriangleIntegral<4,0,0>(triangle);
-    M(5, 0) += computeTriangleIntegral<1,1,0>(triangle);
-    M(5, 1) += computeTriangleIntegral<2,1,0>(triangle);
-    M(5, 2) += computeTriangleIntegral<1,2,0>(triangle);
-    M(5, 3) += computeTriangleIntegral<1,1,1>(triangle);
-    M(5, 4) += computeTriangleIntegral<3,1,0>(triangle);
-    M(5, 5) += computeTriangleIntegral<2,2,0>(triangle);
-    M(6, 0) += computeTriangleIntegral<1,0,1>(triangle);
-    M(6, 1) += computeTriangleIntegral<2,0,1>(triangle);
-    M(6, 2) += computeTriangleIntegral<1,1,1>(triangle);
-    M(6, 3) += computeTriangleIntegral<1,0,2>(triangle);
-    M(6, 4) += computeTriangleIntegral<3,0,1>(triangle);
-    M(6, 5) += computeTriangleIntegral<2,1,1>(triangle);
-    M(6, 6) += computeTriangleIntegral<2,0,2>(triangle);
-    M(7, 0) += computeTriangleIntegral<0,2,0>(triangle);
-    M(7, 1) += computeTriangleIntegral<1,2,0>(triangle);
-    M(7, 2) += computeTriangleIntegral<0,3,0>(triangle);
-    M(7, 3) += computeTriangleIntegral<0,2,1>(triangle);
-    M(7, 4) += computeTriangleIntegral<2,2,0>(triangle);
-    M(7, 5) += computeTriangleIntegral<1,3,0>(triangle);
-    M(7, 6) += computeTriangleIntegral<1,2,1>(triangle);
-    M(7, 7) += computeTriangleIntegral<0,4,0>(triangle);
-    M(8, 0) += computeTriangleIntegral<0,1,1>(triangle);
-    M(8, 1) += computeTriangleIntegral<1,1,1>(triangle);
-    M(8, 2) += computeTriangleIntegral<0,2,1>(triangle);
-    M(8, 3) += computeTriangleIntegral<0,1,2>(triangle);
-    M(8, 4) += computeTriangleIntegral<2,1,1>(triangle);
-    M(8, 5) += computeTriangleIntegral<1,2,1>(triangle);
-    M(8, 6) += computeTriangleIntegral<1,1,2>(triangle);
-    M(8, 7) += computeTriangleIntegral<0,3,1>(triangle);
-    M(8, 8) += computeTriangleIntegral<0,2,2>(triangle);
-    M(9, 0) += computeTriangleIntegral<0,0,2>(triangle);
-    M(9, 1) += computeTriangleIntegral<1,0,2>(triangle);
-    M(9, 2) += computeTriangleIntegral<0,1,2>(triangle);
-    M(9, 3) += computeTriangleIntegral<0,0,3>(triangle);
-    M(9, 4) += computeTriangleIntegral<2,0,2>(triangle);
-    M(9, 5) += computeTriangleIntegral<1,1,2>(triangle);
-    M(9, 6) += computeTriangleIntegral<1,0,3>(triangle);
-    M(9, 7) += computeTriangleIntegral<0,2,2>(triangle);
-    M(9, 8) += computeTriangleIntegral<0,1,3>(triangle);
-    M(9, 9) += computeTriangleIntegral<0,0,4>(triangle);
+    M(0, 0) += area * computeTriangleIntegral<0,0,0>(triangle);
+    M(1, 0) += area * computeTriangleIntegral<1,0,0>(triangle);
+    M(1, 1) += area * computeTriangleIntegral<2,0,0>(triangle);
+    M(2, 0) += area * computeTriangleIntegral<0,1,0>(triangle);
+    M(2, 1) += area * computeTriangleIntegral<1,1,0>(triangle);
+    M(2, 2) += area * computeTriangleIntegral<0,2,0>(triangle);
+    M(3, 0) += area * computeTriangleIntegral<0,0,1>(triangle);
+    M(3, 1) += area * computeTriangleIntegral<1,0,1>(triangle);
+    M(3, 2) += area * computeTriangleIntegral<0,1,1>(triangle);
+    M(3, 3) += area * computeTriangleIntegral<0,0,2>(triangle);
+    M(4, 0) += area * computeTriangleIntegral<2,0,0>(triangle);
+    M(4, 1) += area * computeTriangleIntegral<3,0,0>(triangle);
+    M(4, 2) += area * computeTriangleIntegral<2,1,0>(triangle);
+    M(4, 3) += area * computeTriangleIntegral<2,0,1>(triangle);
+    M(4, 4) += area * computeTriangleIntegral<4,0,0>(triangle);
+    M(5, 0) += area * computeTriangleIntegral<1,1,0>(triangle);
+    M(5, 1) += area * computeTriangleIntegral<2,1,0>(triangle);
+    M(5, 2) += area * computeTriangleIntegral<1,2,0>(triangle);
+    M(5, 3) += area * computeTriangleIntegral<1,1,1>(triangle);
+    M(5, 4) += area * computeTriangleIntegral<3,1,0>(triangle);
+    M(5, 5) += area * computeTriangleIntegral<2,2,0>(triangle);
+    M(6, 0) += area * computeTriangleIntegral<1,0,1>(triangle);
+    M(6, 1) += area * computeTriangleIntegral<2,0,1>(triangle);
+    M(6, 2) += area * computeTriangleIntegral<1,1,1>(triangle);
+    M(6, 3) += area * computeTriangleIntegral<1,0,2>(triangle);
+    M(6, 4) += area * computeTriangleIntegral<3,0,1>(triangle);
+    M(6, 5) += area * computeTriangleIntegral<2,1,1>(triangle);
+    M(6, 6) += area * computeTriangleIntegral<2,0,2>(triangle);
+    M(7, 0) += area * computeTriangleIntegral<0,2,0>(triangle);
+    M(7, 1) += area * computeTriangleIntegral<1,2,0>(triangle);
+    M(7, 2) += area * computeTriangleIntegral<0,3,0>(triangle);
+    M(7, 3) += area * computeTriangleIntegral<0,2,1>(triangle);
+    M(7, 4) += area * computeTriangleIntegral<2,2,0>(triangle);
+    M(7, 5) += area * computeTriangleIntegral<1,3,0>(triangle);
+    M(7, 6) += area * computeTriangleIntegral<1,2,1>(triangle);
+    M(7, 7) += area * computeTriangleIntegral<0,4,0>(triangle);
+    M(8, 0) += area * computeTriangleIntegral<0,1,1>(triangle);
+    M(8, 1) += area * computeTriangleIntegral<1,1,1>(triangle);
+    M(8, 2) += area * computeTriangleIntegral<0,2,1>(triangle);
+    M(8, 3) += area * computeTriangleIntegral<0,1,2>(triangle);
+    M(8, 4) += area * computeTriangleIntegral<2,1,1>(triangle);
+    M(8, 5) += area * computeTriangleIntegral<1,2,1>(triangle);
+    M(8, 6) += area * computeTriangleIntegral<1,1,2>(triangle);
+    M(8, 7) += area * computeTriangleIntegral<0,3,1>(triangle);
+    M(8, 8) += area * computeTriangleIntegral<0,2,2>(triangle);
+    M(9, 0) += area * computeTriangleIntegral<0,0,2>(triangle);
+    M(9, 1) += area * computeTriangleIntegral<1,0,2>(triangle);
+    M(9, 2) += area * computeTriangleIntegral<0,1,2>(triangle);
+    M(9, 3) += area * computeTriangleIntegral<0,0,3>(triangle);
+    M(9, 4) += area * computeTriangleIntegral<2,0,2>(triangle);
+    M(9, 5) += area * computeTriangleIntegral<1,1,2>(triangle);
+    M(9, 6) += area * computeTriangleIntegral<1,0,3>(triangle);
+    M(9, 7) += area * computeTriangleIntegral<0,2,2>(triangle);
+    M(9, 8) += area * computeTriangleIntegral<0,1,3>(triangle);
+    M(9, 9) += area * computeTriangleIntegral<0,0,4>(triangle);
 
-    N(1, 1) += computeTriangleIntegral<0,0,0>(triangle);
-    N(2, 2) += computeTriangleIntegral<0,0,0>(triangle);
-    N(3, 3) += computeTriangleIntegral<0,0,0>(triangle);
-    N(4, 1) += computeTriangleIntegral<1,0,0>(triangle) * 2;
-    N(4, 4) += computeTriangleIntegral<2,0,0>(triangle) * 4;
-    N(5, 1) += computeTriangleIntegral<0,1,0>(triangle);
-    N(5, 2) += computeTriangleIntegral<1,0,0>(triangle);
-    N(5, 4) += computeTriangleIntegral<1,1,0>(triangle) * 2;
-    N(5, 5) += computeTriangleIntegral<2,0,0>(triangle);
-    N(5, 5) += computeTriangleIntegral<0,2,0>(triangle);
-    N(6, 1) += computeTriangleIntegral<0,0,1>(triangle);
-    N(6, 3) += computeTriangleIntegral<1,0,0>(triangle);
-    N(6, 4) += computeTriangleIntegral<1,0,1>(triangle) * 2;
-    N(6, 5) += computeTriangleIntegral<0,1,1>(triangle);
-    N(6, 6) += computeTriangleIntegral<2,0,0>(triangle);
-    N(6, 6) += computeTriangleIntegral<0,0,2>(triangle);
-    N(7, 2) += computeTriangleIntegral<0,1,0>(triangle) * 2;
-    N(7, 5) += computeTriangleIntegral<1,1,0>(triangle) * 2;
-    N(7, 7) += computeTriangleIntegral<0,2,0>(triangle) * 4;
-    N(8, 2) += computeTriangleIntegral<0,0,1>(triangle);
-    N(8, 3) += computeTriangleIntegral<0,1,0>(triangle);
-    N(8, 5) += computeTriangleIntegral<1,0,1>(triangle);
-    N(8, 6) += computeTriangleIntegral<1,1,0>(triangle);
-    N(8, 7) += computeTriangleIntegral<0,1,1>(triangle) * 2;
-    N(8, 8) += computeTriangleIntegral<0,2,0>(triangle);
-    N(8, 8) += computeTriangleIntegral<0,0,2>(triangle);
-    N(9, 3) += computeTriangleIntegral<0,0,1>(triangle) * 2;
-    N(9, 6) += computeTriangleIntegral<1,0,1>(triangle) * 2;
-    N(9, 8) += computeTriangleIntegral<0,1,1>(triangle) * 2;
-    N(9, 9) += computeTriangleIntegral<0,0,2>(triangle) * 4;
+    N(1, 1) += area * computeTriangleIntegral<0,0,0>(triangle);
+    N(2, 2) += area * computeTriangleIntegral<0,0,0>(triangle);
+    N(3, 3) += area * computeTriangleIntegral<0,0,0>(triangle);
+    N(4, 1) += area * computeTriangleIntegral<1,0,0>(triangle) * 2;
+    N(4, 4) += area * computeTriangleIntegral<2,0,0>(triangle) * 4;
+    N(5, 1) += area * computeTriangleIntegral<0,1,0>(triangle);
+    N(5, 2) += area * computeTriangleIntegral<1,0,0>(triangle);
+    N(5, 4) += area * computeTriangleIntegral<1,1,0>(triangle) * 2;
+    N(5, 5) += area * computeTriangleIntegral<2,0,0>(triangle);
+    N(5, 5) += area * computeTriangleIntegral<0,2,0>(triangle);
+    N(6, 1) += area * computeTriangleIntegral<0,0,1>(triangle);
+    N(6, 3) += area * computeTriangleIntegral<1,0,0>(triangle);
+    N(6, 4) += area * computeTriangleIntegral<1,0,1>(triangle) * 2;
+    N(6, 5) += area * computeTriangleIntegral<0,1,1>(triangle);
+    N(6, 6) += area * computeTriangleIntegral<2,0,0>(triangle);
+    N(6, 6) += area * computeTriangleIntegral<0,0,2>(triangle);
+    N(7, 2) += area * computeTriangleIntegral<0,1,0>(triangle) * 2;
+    N(7, 5) += area * computeTriangleIntegral<1,1,0>(triangle) * 2;
+    N(7, 7) += area * computeTriangleIntegral<0,2,0>(triangle) * 4;
+    N(8, 2) += area * computeTriangleIntegral<0,0,1>(triangle);
+    N(8, 3) += area * computeTriangleIntegral<0,1,0>(triangle);
+    N(8, 5) += area * computeTriangleIntegral<1,0,1>(triangle);
+    N(8, 6) += area * computeTriangleIntegral<1,1,0>(triangle);
+    N(8, 7) += area * computeTriangleIntegral<0,1,1>(triangle) * 2;
+    N(8, 8) += area * computeTriangleIntegral<0,2,0>(triangle);
+    N(8, 8) += area * computeTriangleIntegral<0,0,2>(triangle);
+    N(9, 3) += area * computeTriangleIntegral<0,0,1>(triangle) * 2;
+    N(9, 6) += area * computeTriangleIntegral<1,0,1>(triangle) * 2;
+    N(9, 8) += area * computeTriangleIntegral<0,1,1>(triangle) * 2;
+    N(9, 9) += area * computeTriangleIntegral<0,0,2>(triangle) * 4;
   }
 
   M /= A;
