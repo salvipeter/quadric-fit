@@ -17,9 +17,9 @@ static std::pair<MatrixXd, MatrixXd> choleskyWithFullPivoting(const MatrixXd& N)
   const int r = N.rows();
 
   // Perform LDLT decomposition (supports positive semidefinite matrices)
-  Eigen::LDLT<MatrixXd> ldlt(N);
+  LDLT<MatrixXd> ldlt(N);
 
-  if (ldlt.info() != Eigen::Success) {
+  if (ldlt.info() != Success) {
     throw std::invalid_argument("LDLT decomposition failed. Ensure N is positive semidefinite.");
   }
 
@@ -68,7 +68,7 @@ VectorXd solve(const MatrixXd &M, const MatrixXd &N, double tolerance) {
   auto H = Linv * M * Linv.transpose();
   MatrixXd H1, H2, H3;
   extractBlocks(H, H1, H2, H3, h);
-  SelfAdjointEigenSolver<Eigen::MatrixXd> solver(H3);
+  SelfAdjointEigenSolver<MatrixXd> solver(H3);
   if (solver.info() != Success)
     throw std::runtime_error("Reduced generalized eigenproblem failed");
   MatrixXd U1 = solver.eigenvectors().col(0).transpose();
