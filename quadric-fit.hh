@@ -24,8 +24,8 @@ struct Quadric {
   // Approximation of the Euclidean distance (Taubin's second-order formula)
   double distance(const Geometry::Point3D &p) const;
 
-  // Fitter
-  void fit(const Geometry::TriMesh &mesh);
+  // Fitter (eigenvalues <= tolerance are treated as zero)
+  void fit(const Geometry::TriMesh &mesh, double tolerance = 1e-8);
 
   // Classification
   enum Type {

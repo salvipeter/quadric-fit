@@ -262,7 +262,7 @@ double computeTriangleIntegral(const std::array<Point3D, 3> &q) {
 
 }
 
-void Quadric::fit(const TriMesh &mesh) {
+void Quadric::fit(const TriMesh &mesh, double tolerance) {
   MatrixXd M = MatrixXd::Zero(10, 10);
   MatrixXd N = MatrixXd::Zero(10, 10);
   std::array<Point3D, 3> triangle;
@@ -365,6 +365,6 @@ void Quadric::fit(const TriMesh &mesh) {
   M = M.selfadjointView<Lower>();
   N = N.selfadjointView<Lower>();
 
-  auto s = QuadricFitSolver::solve(M, N, 1e-8);
+  auto s = QuadricFitSolver::solve(M, N, tolerance);
   std::copy(s.begin(), s.end(), coeffs.begin());
 }
