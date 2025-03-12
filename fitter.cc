@@ -251,7 +251,7 @@ double computeTriangleIntegral(const std::array<Point3D, 3> &q) {
 
 }
 
-void QuadricFit::fit(const TriMesh &mesh) {
+void Quadric::fit(const TriMesh &mesh) {
   MatrixXd M = MatrixXd::Zero(10, 10);
   MatrixXd N = MatrixXd::Zero(10, 10);
   std::array<Point3D, 3> triangle;

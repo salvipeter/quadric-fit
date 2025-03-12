@@ -17,7 +17,7 @@ auto bbox(const PointVector &pv) {
 
 int main(int argc, char **argv) {
   if (false) {
-    QuadricFit qf;
+    Quadric qf;
     for (size_t i = 0; i < 10; ++i)
       qf.coeffs[i] = 0;
     qf.coeffs[0] = -1;
@@ -38,7 +38,7 @@ int main(int argc, char **argv) {
   }
 
   auto mesh = TriMesh::readOBJ(argv[1]);
-  QuadricFit qf;
+  Quadric qf;
   qf.fit(mesh);
 
   std::cout << "Best fit quadric:";

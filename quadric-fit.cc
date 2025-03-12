@@ -5,7 +5,17 @@
 
 using namespace Geometry;
 
-double QuadricFit::eval(const Point3D &p) const {
+std::tuple<Matrix3x3, Vector3D, double> Quadric::matrixForm() const {
+  Matrix3x3 Q{
+    coeffs[4],     coeffs[5] / 2, coeffs[6] / 2,
+    coeffs[5] / 2, coeffs[7],     coeffs[8] / 2,
+    coeffs[6] / 2, coeffs[8] / 2, coeffs[9]
+  };
+  Vector3D P(coeffs[1], coeffs[2], coeffs[3]);
+  return std::make_tuple(Q, P, coeffs[0]);
+}
+
+double Quadric::eval(const Point3D &p) const {
   return
     coeffs[0] +
     coeffs[1] * p[0] + coeffs[2] * p[1] + coeffs[3] * p[2] +
@@ -13,7 +23,7 @@ double QuadricFit::eval(const Point3D &p) const {
     coeffs[7] * p[1] * p[1] + coeffs[8] * p[1] * p[2] + coeffs[9] * p[2] * p[2];
 }
 
-Vector3D QuadricFit::grad(const Point3D &p) const {
+Vector3D Quadric::grad(const Point3D &p) const {
   return {
     coeffs[1] + coeffs[4] * 2 * p[0] + coeffs[5] * p[1] + coeffs[6] * p[2],
     coeffs[2] + coeffs[5] * p[0] + coeffs[7] * 2 * p[1] + coeffs[8] * p[2],
@@ -21,7 +31,7 @@ Vector3D QuadricFit::grad(const Point3D &p) const {
   };
 }
 
-double QuadricFit::distance(const Point3D &p) const {
+double Quadric::distance(const Point3D &p) const {
   // For an explanation of this formula, see Taubin '94, Eq. (5.3):
   //   F_h = { f_ijk / sqrt(multinom(h,{i,j,k})) | i+j+k = h }
   // and for quadratic surfaces the root of
@@ -54,4 +64,8 @@ double QuadricFit::distance(const Point3D &p) const {
   // if (x1 >= 0 && x2 >= 0 && D != 0)
   //   throw std::runtime_error("multiple non-negative solutions to quadratic equation");
   // return std::max(x1, x2);
+}
+
+Quadric::Type Quadric::classify() const {
+  return TWO_PLANES;            // TODO
 }
