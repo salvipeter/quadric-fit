@@ -54,8 +54,13 @@ static void extractBlocks(const MatrixXd& H, MatrixXd& H1, MatrixXd& H2, MatrixX
 
   // Extract the blocks from H
   H1 = H.bottomRightCorner(r_h, r_h);
-  H2 = H.topRightCorner(h, r_h) * H1.inverse();
-  H3 = H.topLeftCorner(h, h) - H2 * H1 * H2.transpose();
+  if (H1.determinant() == 0) {
+    H2 = MatrixXd::Zero(h, r_h);
+    H3 = H.topLeftCorner(h, h);
+  } else {
+    H2 = H.topRightCorner(h, r_h) * H1.inverse();
+    H3 = H.topLeftCorner(h, h) - H2 * H1 * H2.transpose();
+  }
 }
 
 VectorXd solve(const MatrixXd &M, const MatrixXd &N, double tolerance) {
