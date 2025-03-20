@@ -9,3 +9,5 @@ Edit the `Makefile` to set the correct paths and build. The test program also ne
 
 ## Documentation
 Read the header file (`quadric-fit.hh`).
+Note that the integrals during fitting can be exact or approximative;
+this is controlled by `USE_EXACT_TRIANGLE_INTEGRAL` in `fitter.cc`.
