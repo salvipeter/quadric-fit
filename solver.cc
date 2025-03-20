@@ -8,7 +8,7 @@ using namespace Eigen;
 
 namespace QuadricFitSolver {
 
-static std::pair<MatrixXd, MatrixXd> choleskyWithFullPivoting(const MatrixXd& N) {
+static std::pair<MatrixXd, MatrixXd> choleskyWithFullPivoting(const MatrixXd& N, double tolerance) {
   // Ensure N is symmetric positive semidefinite
   if (N.rows() != N.cols()) {
     throw std::invalid_argument("Matrix N must be square.");
@@ -25,7 +25,6 @@ static std::pair<MatrixXd, MatrixXd> choleskyWithFullPivoting(const MatrixXd& N)
 
   // Extract rank of N from the diagonal of D
   VectorXd D = ldlt.vectorD();
-  const double tolerance = 1e-10;
   int rank = (D.array().abs() > tolerance).count();
 
   // Extract L (lower triangular part)
@@ -64,7 +63,7 @@ static void extractBlocks(const MatrixXd& H, MatrixXd& H1, MatrixXd& H2, MatrixX
 }
 
 VectorXd solve(const MatrixXd &M, const MatrixXd &N, double tolerance) {
-  auto [L1, L2] = choleskyWithFullPivoting(N);
+  auto [L1, L2] = choleskyWithFullPivoting(N, tolerance);
   int r = 10, h = L1.cols(), k = 1;
   MatrixXd L(r, r);
   L.leftCols(h) = L1;

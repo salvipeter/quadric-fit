@@ -70,7 +70,7 @@ int main(int argc, char **argv) {
 
   std::cout << "Quadric:";
   for (auto si : qf.coeffs)
-    std::cout << ' ' << (std::abs(si) < 1e-3 ? 0 : si);
+    std::cout << ' ' << si;
   std::cout << std::endl;
   std::cout << "Its type seems to be: " << names[qf.classify()] << std::endl;
 
