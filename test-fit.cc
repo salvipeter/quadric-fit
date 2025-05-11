@@ -26,6 +26,7 @@ std::string names[] = {
 std::array<double, 10> canonical_coeffs[] = {
   //   1   x   y   z   x2  xy  xz  y2  yz  z2
   { {  0,  0,  0,  0,  0,  0,  0,  0,  0,  0  } }, //  <placeholder>
+  { {8,7,6,5,-5,4,3,4,2,3}},
   { {  0,  0,  0,  0,  1,  0,  0,  0,  0,  0  } }, //  1. coincident planes
   { {  1,  0,  0,  0,  1,  0,  0,  1,  0,  1  } }, //  2. ellipsoid (imaginary)
   { { -1,  0,  0,  0,  1,  0,  0,  1,  0,  1  } }, //  3. ellipsoid (real)
